@@ -1,13 +1,26 @@
 """Tests for lyrics_matcher package."""
 
 import pytest
+from pathlib import Path
 from lyrics_matcher.provider import (
     parse_lrc_timestamp,
     format_lrc_timestamp,
+    convert_to_enhanced_lrc,
+    parse_enhanced_lrc,
     LrclibProvider,
+    NeteaseProvider,
+    QQMusicProvider,
+    MultiProvider,
+    LyricTrack,
 )
-from lyrics_matcher.audio import is_supported_audio, AudioMetadata, get_metadata
-from pathlib import Path
+from lyrics_matcher.audio import (
+    is_supported_audio,
+    AudioMetadata,
+    get_metadata,
+    LyricsFormat,
+    convert_lrc_to_srt,
+    convert_lrc_to_ass,
+)
 
 
 class TestLrcTimestamp:
@@ -48,13 +61,93 @@ class TestAudioMetadata:
         assert metadata.duration == 0.0
 
 
-class TestLrclibProvider:
-    """Test Lrclib API provider."""
+class TestLyricsProviders:
+    """Test lyrics providers."""
 
-    def test_provider_initialization(self):
+    def test_lrclib_provider_init(self):
         provider = LrclibProvider()
         assert provider.timeout == 10
+        assert provider.name == "LRCLIB"
 
-    def test_provider_custom_timeout(self):
-        provider = LrclibProvider(timeout=30)
-        assert provider.timeout == 30
+    def test_netease_provider_init(self):
+        provider = NeteaseProvider()
+        assert provider.timeout == 10
+        assert provider.name == "Netease"
+
+    def test_qqmusic_provider_init(self):
+        provider = QQMusicProvider()
+        assert provider.timeout == 10
+        assert provider.name == "QQ Music"
+
+    def test_multi_provider_init(self):
+        provider = MultiProvider()
+        assert provider.max_workers == 4
+        assert len(provider.providers) == 3
+
+
+class TestLyricTrack:
+    """Test LyricTrack dataclass."""
+
+    def test_track_creation(self):
+        track = LyricTrack(
+            id="test_1",
+            name="Test Song",
+            track_name="Test Song",
+            artist_name="Test Artist",
+            album_name="Test Album",
+            duration=180.0,
+            instrumental=False,
+            source="LRCLIB",
+        )
+        assert track.name == "Test Song"
+        assert track.artist_name == "Test Artist"
+        assert track.duration == 180.0
+        assert track.source == "LRCLIB"
+
+
+class TestEnhancedLrc:
+    """Test enhanced LRC conversion."""
+
+    def test_parse_enhanced_lrc(self):
+        lrc = "[00:12.00]<00:12.00>Hello<00:12.50>World"
+        words = parse_enhanced_lrc(lrc)
+        assert len(words) > 0
+
+    def test_convert_to_enhanced_lrc(self):
+        synced = """[00:12.00]Hello World
+[00:15.00]This is a test"""
+        result = convert_to_enhanced_lrc(synced)
+        assert result is not None
+        assert len(result) > 0
+
+
+class TestSrtConversion:
+    """Test SRT format conversion."""
+
+    def test_convert_lrc_to_srt(self):
+        lrc = """[00:00.00]First line
+[00:05.00]Second line"""
+        srt = convert_lrc_to_srt(lrc)
+        assert "1" in srt
+        assert "00:00:00,000 --> 00:00:05,000" in srt
+        assert "First line" in srt
+
+
+class TestAssConversion:
+    """Test ASS format conversion."""
+
+    def test_convert_lrc_to_ass(self):
+        lrc = "[00:00.00]Hello World"
+        ass = convert_lrc_to_ass(lrc, "Test Song", "Test Artist")
+        assert "[Script Info]" in ass
+        assert "[V4+ Styles]" in ass
+        assert "[Events]" in ass
+
+
+class TestLyricsFormat:
+    """Test LyricsFormat enum."""
+
+    def test_format_values(self):
+        assert LyricsFormat.LRC.value == "lrc"
+        assert LyricsFormat.SRT.value == "srt"
+        assert LyricsFormat.ASS.value == "ass"

@@ -1,0 +1,154 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: lyrics-matcher-windows
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Create spec file for PyInstaller
+        run: |
+          @'
+          # -*- mode: python ; coding: utf-8 -*-
+          import sys
+          import os
+
+          block_cipher = None
+          hiddenimports = ['PIL._tkinter_finder']
+
+          a = Analysis(
+              ['src\\lyrics_matcher\\__main__.py'],
+              pathex=[],
+              binaries=[],
+              datas=[],
+              hiddenimports=hiddenimports,
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+          exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name='LyricsMatcher',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch=None,
+              codesign_identity=None,
+              entitlements_inherit=None,
+          )
+          coll = COLLECT(
+              exe,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              name='LyricsMatcher',
+          )
+          '@ | Out-File -FilePath "lyrics_matcher.spec" -Encoding UTF8
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install pyinstaller
+
+      - name: Build executable
+        run: pyinstaller lyrics-matcher.spec -y
+        shell: cmd
+
+      - name: Create distribution folder
+        run: |
+          mkdir -p dist/LyricsMatcher
+          if (Test-Path "dist/LyricsMatcher/LyricsMatcher.exe") {
+              Copy-Item "dist/LyricsMatcher/LyricsMatcher.exe" "dist/LyricsMatcher/"
+              Copy-Item "README.md" "dist/LyricsMatcher/"
+              Copy-Item "LICENSE" "dist/LyricsMatcher/"
+          } elseif (Test-Path "dist/LyricsMatcher/LyricsMatcher") {
+              Copy-Item "dist/LyricsMatcher/LyricsMatcher.exe" "dist/LyricsMatcher/" -ErrorAction SilentlyContinue
+              Copy-Item "README.md" "dist/LyricsMatcher/"
+              Copy-Item "LICENSE" "dist/LyricsMatcher/"
+          }
+
+      - name: Compress executable
+        run: |
+          if (Test-Path "dist/LyricsMatcher") {
+              Compress-Archive -Path "dist/LyricsMatcher\*" -DestinationPath "dist/LyricsMatcher-v${{ github.run_number }}.zip" -Force
+              Write-Host "Created LyricsMatcher-v${{ github.run_number }}.zip"
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LyricsMatcher-windows
+          path: |
+            dist/LyricsMatcher-v*.zip
+            dist/LyricsMatcher/*.exe
+            dist/LyricsMatcher/*.md
+            dist/LyricsMatcher/*.txt
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: LyricsMatcher-windows
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: LyricsMatcher-v*.zip
+          tag_name: ${{ github.ref }}
+          name: LyricsMatcher v${{ steps.get_version.VERSION }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,7 +10,7 @@ LANGUAGES = {
 TRANSLATIONS: Dict[str, Dict[str, str]] = {
     "zh_CN": {
         # Window titles
-        "app_title": "歌词匹配器 v0.3",
+        "app_title": "歌词匹配器 v0.3.0",
         "ready_status": "就绪 - 请选择文件或文件夹开始",
 
         # Menu
@@ -57,11 +57,11 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "dialog_select_audio": "选择音频文件",
         "dialog_select_folder": "选择文件夹",
         "dialog_about_title": "关于歌词匹配器",
-        "dialog_about_text": "歌词匹配器 v0.3\n\n一个简单易用的歌词下载匹配工具\n\n支持多平台歌词搜索、多种输出格式",
+        "dialog_about_text": "歌词匹配器 v0.3.0\n\n一个简单易用的歌词下载匹配工具\n\n支持多平台歌词搜索、多种输出格式",
     },
     "en": {
         # Window titles
-        "app_title": "Lyrics Matcher v0.3",
+        "app_title": "Lyrics Matcher v0.3.0",
         "ready_status": "Ready - Select files or folder to begin",
 
         # Menu
@@ -108,7 +108,7 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "dialog_select_audio": "Select Audio Files",
         "dialog_select_folder": "Select Folder",
         "dialog_about_title": "About Lyrics Matcher",
-        "dialog_about_text": "Lyrics Matcher v0.3\n\nA simple and user-friendly lyrics download and matching tool\n\nSupports multi-platform lyrics search and multiple output formats",
+        "dialog_about_text": "Lyrics Matcher v0.3.0\n\nA simple and user-friendly lyrics download and matching tool\n\nSupports multi-platform lyrics search and multiple output formats",
     },
 }
 

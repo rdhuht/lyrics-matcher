@@ -151,3 +151,28 @@ class TestLyricsFormat:
         assert LyricsFormat.LRC.value == "lrc"
         assert LyricsFormat.SRT.value == "srt"
         assert LyricsFormat.ASS.value == "ass"
+
+class TestI18n:
+    """Test internationalization module."""
+
+    def test_translations_exist(self):
+        from lyrics_matcher.i18n import LANGUAGES, TRANSLATIONS
+        assert "zh_CN" in LANGUAGES
+        assert "en" in LANGUAGES
+        assert "zh_CN" in TRANSLATIONS
+        assert "en" in TRANSLATIONS
+
+    def test_default_language(self):
+        from lyrics_matcher.i18n import i18n
+        assert i18n.get_language() == "zh_CN"
+
+    def test_translate(self):
+        from lyrics_matcher.i18n import t
+        assert "歌词匹配器" in t("app_title") or "Lyrics Matcher" in t("app_title")
+
+    def test_language_switch(self):
+        from lyrics_matcher.i18n import i18n, set_language
+        i18n.set_language("en")
+        assert i18n.get_language() == "en"
+        i18n.set_language("zh_CN")
+        assert i18n.get_language() == "zh_CN"

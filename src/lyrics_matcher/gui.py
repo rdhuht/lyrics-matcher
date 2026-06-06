@@ -1,7 +1,7 @@
 """Lyrics Matcher GUI application with multi-provider search and multi-select support."""
 
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox
 from pathlib import Path
 from typing import Optional, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor
@@ -21,6 +21,7 @@ from .provider import (
     LyricTrack,
     convert_to_enhanced_lrc,
 )
+from .i18n import i18n, LANGUAGES, set_language
 
 
 class LyricsMatcherGUI:
@@ -28,7 +29,7 @@ class LyricsMatcherGUI:
 
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Lyrics Matcher v0.3")
+        self.root.title(i18n.t("app_title"))
         self.root.geometry("900x750")
 
         self.provider = MultiProvider(timeout=15, max_workers=4)
@@ -38,7 +39,88 @@ class LyricsMatcherGUI:
         self.selected_indices: Set[int] = set()
         self.current_format = tk.StringVar(value="lrc")
 
+        self._create_menu()
         self._create_widgets()
+        self._update_ui_texts()
+
+    def _create_menu(self):
+        """Create the menu bar."""
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=i18n.t("menu_file"), menu=file_menu)
+        file_menu.add_command(label=i18n.t("menu_exit"), command=self.root.quit)
+
+        # Language menu
+        lang_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=i18n.t("menu_language"), menu=lang_menu)
+
+        self.lang_var = tk.StringVar(value=i18n.get_language())
+        for lang_code, lang_name in LANGUAGES.items():
+            lang_menu.add_radiobutton(
+                label=lang_name,
+                variable=self.lang_var,
+                value=lang_code,
+                command=self._change_language,
+            )
+
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label=i18n.t("menu_help"), menu=help_menu)
+        help_menu.add_command(label=i18n.t("menu_about"), command=self._show_about)
+
+    def _change_language(self):
+        """Change the application language."""
+        new_lang = self.lang_var.get()
+        set_language(new_lang)
+        i18n.set_language(new_lang)
+
+        # Update window title
+        self.root.title(i18n.t("app_title"))
+
+        # Rebuild menu
+        self.root.config(menu="")
+        self._create_menu()
+
+        # Update all UI texts
+        self._update_ui_texts()
+
+    def _update_ui_texts(self):
+        """Update all UI texts to current language."""
+        # Update button texts
+        self.btn_select_files.config(text=i18n.t("btn_select_files"))
+        self.btn_select_folder.config(text=i18n.t("btn_select_folder"))
+        self.btn_search.config(text=i18n.t("btn_search"))
+        self.btn_clear.config(text=i18n.t("btn_clear"))
+        self.btn_select_all.config(text=i18n.t("btn_select_all"))
+        self.btn_deselect_all.config(text=i18n.t("btn_deselect_all"))
+        self.btn_invert.config(text=i18n.t("btn_invert_selection"))
+        self.btn_save_selected.config(text=i18n.t("btn_save_selected"))
+        self.btn_write_tags.config(text=i18n.t("btn_write_tags"))
+
+        # Update labels
+        self.label_files.config(text=i18n.t("label_files"))
+        self.label_results.config(text=i18n.t("label_results"))
+        self.label_preview.config(text=i18n.t("label_preview"))
+
+        # Update radio buttons
+        self.radio_lrc.config(text=i18n.t("format_lrc"))
+        self.radio_enhanced.config(text=i18n.t("format_enhanced"))
+        self.radio_srt.config(text=i18n.t("format_srt"))
+        self.radio_ass.config(text=i18n.t("format_ass"))
+
+        # Update status if ready
+        if "Ready" in self.status_var.get() or not self.status_var.get():
+            self.status_var.set(i18n.t("ready_status"))
+
+    def _show_about(self):
+        """Show about dialog."""
+        messagebox.showinfo(
+            i18n.t("dialog_about_title"),
+            i18n.t("dialog_about_text"),
+        )
 
     def _create_widgets(self):
         """Create GUI widgets."""
@@ -53,101 +135,114 @@ class LyricsMatcherGUI:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
 
-        ttk.Button(
+        self.btn_select_files = ttk.Button(
             btn_frame,
-            text="Select Files",
+            text=i18n.t("btn_select_files"),
             command=self._select_files,
-        ).grid(row=0, column=0, padx=(0, 5))
+        )
+        self.btn_select_files.grid(row=0, column=0, padx=(0, 5))
 
-        ttk.Button(
+        self.btn_select_folder = ttk.Button(
             btn_frame,
-            text="Select Folder",
+            text=i18n.t("btn_select_folder"),
             command=self._select_folder,
-        ).grid(row=0, column=1, padx=(0, 5))
+        )
+        self.btn_select_folder.grid(row=0, column=1, padx=(0, 5))
 
-        ttk.Button(
+        self.btn_search = ttk.Button(
             btn_frame,
-            text="Search Lyrics",
+            text=i18n.t("btn_search"),
             command=self._search_lyrics,
-        ).grid(row=0, column=2, padx=(0, 5))
+        )
+        self.btn_search.grid(row=0, column=2, padx=(0, 5))
 
-        ttk.Button(
+        self.btn_clear = ttk.Button(
             btn_frame,
-            text="Clear",
+            text=i18n.t("btn_clear"),
             command=self._clear_all,
-        ).grid(row=0, column=3, padx=(0, 5))
+        )
+        self.btn_clear.grid(row=0, column=3, padx=(0, 5))
 
         # Results selection buttons
-        selection_frame = ttk.LabelFrame(btn_frame, text="Selection", padding="5")
+        selection_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_selection"), padding="5")
         selection_frame.grid(row=0, column=4, padx=(10, 0))
 
-        ttk.Button(
+        self.btn_select_all = ttk.Button(
             selection_frame,
-            text="Select All",
+            text=i18n.t("btn_select_all"),
             command=self._select_all_results,
-        ).grid(row=0, column=0, padx=(0, 3))
+        )
+        self.btn_select_all.grid(row=0, column=0, padx=(0, 3))
 
-        ttk.Button(
+        self.btn_deselect_all = ttk.Button(
             selection_frame,
-            text="Deselect All",
+            text=i18n.t("btn_deselect_all"),
             command=self._deselect_all_results,
-        ).grid(row=0, column=1, padx=(0, 3))
+        )
+        self.btn_deselect_all.grid(row=0, column=1, padx=(0, 3))
 
-        ttk.Button(
+        self.btn_invert = ttk.Button(
             selection_frame,
-            text="Invert Selection",
+            text=i18n.t("btn_invert_selection"),
             command=self._invert_selection,
-        ).grid(row=0, column=2)
+        )
+        self.btn_invert.grid(row=0, column=2)
 
         # Save options
-        save_frame = ttk.LabelFrame(btn_frame, text="Save Options", padding="5")
+        save_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_save_options"), padding="5")
         save_frame.grid(row=0, column=5, padx=(10, 0))
 
-        ttk.Button(
+        self.btn_save_selected = ttk.Button(
             save_frame,
-            text="Save Selected",
+            text=i18n.t("btn_save_selected"),
             command=self._save_selected_to_file,
-        ).grid(row=0, column=0, padx=(0, 3))
+        )
+        self.btn_save_selected.grid(row=0, column=0, padx=(0, 3))
 
-        ttk.Button(
+        self.btn_write_tags = ttk.Button(
             save_frame,
-            text="Write Tags (Selected)",
+            text=i18n.t("btn_write_tags"),
             command=self._write_selected_tags,
-        ).grid(row=0, column=1)
+        )
+        self.btn_write_tags.grid(row=0, column=1)
 
         # Format selection
-        format_frame = ttk.LabelFrame(btn_frame, text="Format", padding="5")
+        format_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_format"), padding="5")
         format_frame.grid(row=0, column=6, padx=(10, 0))
 
-        ttk.Radiobutton(
+        self.radio_lrc = ttk.Radiobutton(
             format_frame,
-            text="LRC",
+            text=i18n.t("format_lrc"),
             variable=self.current_format,
             value="lrc",
-        ).grid(row=0, column=0, padx=(0, 5))
+        )
+        self.radio_lrc.grid(row=0, column=0, padx=(0, 5))
 
-        ttk.Radiobutton(
+        self.radio_enhanced = ttk.Radiobutton(
             format_frame,
-            text="Enhanced",
+            text=i18n.t("format_enhanced"),
             variable=self.current_format,
             value="enhanced",
-        ).grid(row=0, column=1, padx=(0, 5))
+        )
+        self.radio_enhanced.grid(row=0, column=1, padx=(0, 5))
 
-        ttk.Radiobutton(
+        self.radio_srt = ttk.Radiobutton(
             format_frame,
-            text="SRT",
+            text=i18n.t("format_srt"),
             variable=self.current_format,
             value="srt",
-        ).grid(row=0, column=2, padx=(0, 5))
+        )
+        self.radio_srt.grid(row=0, column=2, padx=(0, 5))
 
-        ttk.Radiobutton(
+        self.radio_ass = ttk.Radiobutton(
             format_frame,
-            text="ASS",
+            text=i18n.t("format_ass"),
             variable=self.current_format,
             value="ass",
-        ).grid(row=0, column=3)
+        )
+        self.radio_ass.grid(row=0, column=3)
 
-        self.status_var = tk.StringVar(value="Ready - Select files or folder to begin")
+        self.status_var = tk.StringVar(value=i18n.t("ready_status"))
         ttk.Label(main_frame, textvariable=self.status_var).grid(
             row=1, column=0, sticky="w", pady=(0, 5)
         )
@@ -158,8 +253,8 @@ class LyricsMatcherGUI:
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(1, weight=1)
 
-        file_label = ttk.Label(list_frame, text="Selected Audio Files:")
-        file_label.grid(row=0, column=0, sticky="w", pady=(0, 5))
+        self.label_files = ttk.Label(list_frame, text=i18n.t("label_files"))
+        self.label_files.grid(row=0, column=0, sticky="w", pady=(0, 5))
 
         self.file_listbox = tk.Listbox(list_frame, height=5)
         self.file_listbox.grid(row=1, column=0, sticky="ew", pady=(0, 10))
@@ -169,36 +264,36 @@ class LyricsMatcherGUI:
         scrollbar.grid(row=1, column=1, sticky="ns")
         self.file_listbox.config(yscrollcommand=scrollbar.set)
 
-        # Search results - with extended selection for multi-select
-        results_frame = ttk.LabelFrame(main_frame, text="Search Results (Ctrl+Click for multi-select)", padding="5")
-        results_frame.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
-        results_frame.columnconfigure(0, weight=1)
-        results_frame.rowconfigure(0, weight=1)
+        # Search results
+        self.label_results = ttk.LabelFrame(main_frame, text=i18n.t("label_results"), padding="5")
+        self.label_results.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
+        self.label_results.columnconfigure(0, weight=1)
+        self.label_results.rowconfigure(0, weight=1)
 
         self.results_listbox = tk.Listbox(
-            results_frame,
+            self.label_results,
             height=6,
-            selectmode=tk.EXTENDED,  # Enable multi-select
+            selectmode=tk.EXTENDED,
         )
         self.results_listbox.grid(row=0, column=0, sticky="ew")
         self.results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
         self.results_listbox.bind("<Control-a>", lambda e: self._select_all_results())
 
-        scrollbar2 = ttk.Scrollbar(results_frame, orient="vertical")
+        scrollbar2 = ttk.Scrollbar(self.label_results, orient="vertical")
         scrollbar2.config(command=self.results_listbox.yview)
         scrollbar2.grid(row=0, column=1, sticky="ns")
         self.results_listbox.config(yscrollcommand=scrollbar2.set)
 
         # Lyrics preview
-        lyrics_frame = ttk.LabelFrame(main_frame, text="Lyrics Preview (Double-click to save)", padding="5")
-        lyrics_frame.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
-        lyrics_frame.columnconfigure(0, weight=1)
-        lyrics_frame.rowconfigure(0, weight=1)
+        self.label_preview = ttk.LabelFrame(main_frame, text=i18n.t("label_preview"), padding="5")
+        self.label_preview.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
+        self.label_preview.columnconfigure(0, weight=1)
+        self.label_preview.rowconfigure(0, weight=1)
 
-        self.lyrics_text = tk.Text(lyrics_frame, height=10, wrap="word")
+        self.lyrics_text = tk.Text(self.label_preview, height=10, wrap="word")
         self.lyrics_text.grid(row=0, column=0, sticky="nsew")
 
-        scrollbar3 = ttk.Scrollbar(lyrics_frame, orient="vertical")
+        scrollbar3 = ttk.Scrollbar(self.label_preview, orient="vertical")
         scrollbar3.config(command=self.lyrics_text.yview)
         scrollbar3.grid(row=0, column=1, sticky="ns")
         self.lyrics_text.config(yscrollcommand=scrollbar3.set)
@@ -208,7 +303,7 @@ class LyricsMatcherGUI:
     def _select_files(self):
         """Open file dialog to select audio files."""
         files = filedialog.askopenfilenames(
-            title="Select Audio Files",
+            title=i18n.t("dialog_select_audio"),
             filetypes=[
                 ("Audio Files", " ".join(f"*{ext}" for ext in SUPPORTED_FORMATS)),
                 ("All Files", "*.*"),
@@ -220,7 +315,7 @@ class LyricsMatcherGUI:
 
     def _select_folder(self):
         """Open folder dialog to select directory."""
-        folder = filedialog.askdirectory(title="Select Folder")
+        folder = filedialog.askdirectory(title=i18n.t("dialog_select_folder"))
         if folder:
             folder_path = Path(folder)
             self.selected_files = [
@@ -237,15 +332,15 @@ class LyricsMatcherGUI:
             metadata = get_metadata(file_path)
             title = metadata.title or file_path.stem
             self.file_listbox.insert(tk.END, f"{title} ({file_path.name})")
-        self.status_var.set(f"Loaded {len(self.selected_files)} files")
+        self.status_var.set(i18n.t("status_loaded", count=len(self.selected_files)))
 
     def _search_lyrics(self):
         """Search for lyrics for selected files using multi-threading."""
         if not self.selected_files:
-            self.status_var.set("No files selected")
+            self.status_var.set(i18n.t("status_no_files"))
             return
 
-        self.status_var.set("Searching via multiple providers...")
+        self.status_var.set(i18n.t("status_searching"))
         self.root.update()
 
         self.results_listbox.delete(0, tk.END)
@@ -274,11 +369,11 @@ class LyricsMatcherGUI:
                     pass
 
                 if idx % 5 == 0:
-                    self.status_var.set(f"Searching... ({idx + 1}/{len(futures)})")
+                    self.status_var.set(i18n.t("status_searching_progress", current=idx + 1, total=len(futures)))
                     self.root.update()
 
         self._update_results()
-        self.status_var.set(f"Found {len(self.search_results)} lyrics options")
+        self.status_var.set(i18n.t("status_found", count=len(self.search_results)))
 
     def _update_results(self):
         """Update the results list display."""
@@ -289,7 +384,6 @@ class LyricsMatcherGUI:
             line = f"[{source_icon}] {track.artist_name} - {track.track_name}"
             self.results_listbox.insert(tk.END, line)
 
-            # Apply selection highlight
             if idx in self.selected_indices:
                 self.results_listbox.selection_set(idx)
 
@@ -299,10 +393,8 @@ class LyricsMatcherGUI:
         if not selection:
             return
 
-        # Update selected indices
         self.selected_indices = set(selection)
 
-        # Show first selected item's lyrics
         idx = selection[0]
         if idx < len(self.search_results):
             _, track = self.search_results[idx]
@@ -350,7 +442,7 @@ class LyricsMatcherGUI:
     def _save_selected_to_file(self):
         """Save all selected lyrics to files."""
         if not self.selected_indices:
-            self.status_var.set("No lyrics selected - use Ctrl+Click or Select All")
+            self.status_var.set(i18n.t("status_no_selection"))
             return
 
         lyrics_format = LyricsFormat(self.current_format.get())
@@ -364,12 +456,12 @@ class LyricsMatcherGUI:
                     lyrics_path = save_lyrics_to_file(file_path, lyrics, lyrics_format)
                     saved_count += 1
 
-        self.status_var.set(f"Saved {saved_count} lyrics files")
+        self.status_var.set(i18n.t("status_saved", count=saved_count))
 
     def _write_selected_tags(self):
         """Write lyrics to tags for all selected results."""
         if not self.selected_indices:
-            self.status_var.set("No lyrics selected - use Ctrl+Click or Select All")
+            self.status_var.set(i18n.t("status_no_selection"))
             return
 
         success_count = 0
@@ -386,9 +478,9 @@ class LyricsMatcherGUI:
                         fail_count += 1
 
         if fail_count == 0:
-            self.status_var.set(f"Wrote tags to {success_count} files")
+            self.status_var.set(i18n.t("status_write_success", count=success_count))
         else:
-            self.status_var.set(f"Success: {success_count}, Failed: {fail_count}")
+            self.status_var.set(i18n.t("status_write_partial", success=success_count, fail=fail_count))
 
     def _clear_all(self):
         """Clear all selections and results."""
@@ -399,7 +491,7 @@ class LyricsMatcherGUI:
         self.file_listbox.delete(0, tk.END)
         self.results_listbox.delete(0, tk.END)
         self.lyrics_text.delete("1.0", tk.END)
-        self.status_var.set("Cleared")
+        self.status_var.set(i18n.t("status_cleared"))
 
     def run(self):
         """Start the GUI application."""

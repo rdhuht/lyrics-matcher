@@ -29,7 +29,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "btn_deselect_all": "取消全选",
         "btn_invert_selection": "反选",
         "btn_save_selected": "保存选中",
-        "btn_write_tags": "写入标签(选中)",
 
         # Labels
         "label_files": "已选音频文件：",
@@ -37,7 +36,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "label_preview": "歌词预览 (双击保存)",
         "label_format": "格式",
         "label_selection": "选择",
-        "label_save_options": "保存选项",
 
         # Status messages
         "status_loaded": "已加载 {count} 个文件",
@@ -47,8 +45,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "status_no_files": "未选择文件",
         "status_no_selection": "未选择歌词 - 使用 Ctrl+点击 或 全选",
         "status_saved": "已保存 {count} 个歌词文件",
-        "status_write_success": "已写入 {count} 个文件的标签",
-        "status_write_partial": "成功: {success}, 失败: {fail}",
         "status_cleared": "已清除",
 
         # Formats
@@ -56,11 +52,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "format_enhanced": "逐字",
         "format_srt": "SRT",
         "format_ass": "ASS",
-
-        # Source icons
-        "source_lrclib": "L",
-        "source_netease": "N",
-        "source_qq": "Q",
 
         # Dialogs
         "dialog_select_audio": "选择音频文件",
@@ -89,7 +80,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "btn_deselect_all": "Deselect All",
         "btn_invert_selection": "Invert Selection",
         "btn_save_selected": "Save Selected",
-        "btn_write_tags": "Write Tags (Selected)",
 
         # Labels
         "label_files": "Selected Audio Files:",
@@ -97,7 +87,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "label_preview": "Lyrics Preview (Double-click to save)",
         "label_format": "Format",
         "label_selection": "Selection",
-        "label_save_options": "Save Options",
 
         # Status messages
         "status_loaded": "Loaded {count} files",
@@ -107,8 +96,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "status_no_files": "No files selected",
         "status_no_selection": "No lyrics selected - use Ctrl+Click or Select All",
         "status_saved": "Saved {count} lyrics files",
-        "status_write_success": "Wrote tags to {count} files",
-        "status_write_partial": "Success: {success}, Failed: {fail}",
         "status_cleared": "Cleared",
 
         # Formats
@@ -116,11 +103,6 @@ TRANSLATIONS: Dict[str, Dict[str, str]] = {
         "format_enhanced": "Enhanced",
         "format_srt": "SRT",
         "format_ass": "ASS",
-
-        # Source icons
-        "source_lrclib": "L",
-        "source_netease": "N",
-        "source_qq": "Q",
 
         # Dialogs
         "dialog_select_audio": "Select Audio Files",
@@ -158,7 +140,6 @@ class I18n:
         return self.language
 
 
-# Global i18n instance
 i18n = I18n("zh_CN")
 
 

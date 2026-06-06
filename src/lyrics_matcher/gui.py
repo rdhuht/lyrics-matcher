@@ -10,7 +10,6 @@ from .audio import (
     get_metadata,
     is_supported_audio,
     save_lyrics_to_file,
-    write_lyrics_to_tag,
     SUPPORTED_FORMATS,
     LyricsFormat,
     convert_lrc_to_srt,
@@ -77,19 +76,13 @@ class LyricsMatcherGUI:
         set_language(new_lang)
         i18n.set_language(new_lang)
 
-        # Update window title
         self.root.title(i18n.t("app_title"))
-
-        # Rebuild menu
         self.root.config(menu="")
         self._create_menu()
-
-        # Update all UI texts
         self._update_ui_texts()
 
     def _update_ui_texts(self):
         """Update all UI texts to current language."""
-        # Update button texts
         self.btn_select_files.config(text=i18n.t("btn_select_files"))
         self.btn_select_folder.config(text=i18n.t("btn_select_folder"))
         self.btn_search.config(text=i18n.t("btn_search"))
@@ -98,20 +91,16 @@ class LyricsMatcherGUI:
         self.btn_deselect_all.config(text=i18n.t("btn_deselect_all"))
         self.btn_invert.config(text=i18n.t("btn_invert_selection"))
         self.btn_save_selected.config(text=i18n.t("btn_save_selected"))
-        self.btn_write_tags.config(text=i18n.t("btn_write_tags"))
 
-        # Update labels
         self.label_files.config(text=i18n.t("label_files"))
         self.label_results.config(text=i18n.t("label_results"))
         self.label_preview.config(text=i18n.t("label_preview"))
 
-        # Update radio buttons
         self.radio_lrc.config(text=i18n.t("format_lrc"))
         self.radio_enhanced.config(text=i18n.t("format_enhanced"))
         self.radio_srt.config(text=i18n.t("format_srt"))
         self.radio_ass.config(text=i18n.t("format_ass"))
 
-        # Update status if ready
         if "Ready" in self.status_var.get() or not self.status_var.get():
             self.status_var.set(i18n.t("ready_status"))
 
@@ -163,7 +152,7 @@ class LyricsMatcherGUI:
         )
         self.btn_clear.grid(row=0, column=3, padx=(0, 5))
 
-        # Results selection buttons
+        # Selection buttons
         selection_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_selection"), padding="5")
         selection_frame.grid(row=0, column=4, padx=(10, 0))
 
@@ -188,23 +177,13 @@ class LyricsMatcherGUI:
         )
         self.btn_invert.grid(row=0, column=2)
 
-        # Save options
-        save_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_save_options"), padding="5")
-        save_frame.grid(row=0, column=5, padx=(10, 0))
-
+        # Save button
         self.btn_save_selected = ttk.Button(
-            save_frame,
+            btn_frame,
             text=i18n.t("btn_save_selected"),
             command=self._save_selected_to_file,
         )
-        self.btn_save_selected.grid(row=0, column=0, padx=(0, 3))
-
-        self.btn_write_tags = ttk.Button(
-            save_frame,
-            text=i18n.t("btn_write_tags"),
-            command=self._write_selected_tags,
-        )
-        self.btn_write_tags.grid(row=0, column=1)
+        self.btn_save_selected.grid(row=0, column=5, padx=(10, 0))
 
         # Format selection
         format_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_format"), padding="5")
@@ -457,30 +436,6 @@ class LyricsMatcherGUI:
                     saved_count += 1
 
         self.status_var.set(i18n.t("status_saved", count=saved_count))
-
-    def _write_selected_tags(self):
-        """Write lyrics to tags for all selected results."""
-        if not self.selected_indices:
-            self.status_var.set(i18n.t("status_no_selection"))
-            return
-
-        success_count = 0
-        fail_count = 0
-
-        for idx in self.selected_indices:
-            if idx < len(self.search_results):
-                file_path, track = self.search_results[idx]
-                lyrics = track.synced_lyrics or track.plain_lyrics or ""
-                if lyrics:
-                    if write_lyrics_to_tag(file_path, lyrics):
-                        success_count += 1
-                    else:
-                        fail_count += 1
-
-        if fail_count == 0:
-            self.status_var.set(i18n.t("status_write_success", count=success_count))
-        else:
-            self.status_var.set(i18n.t("status_write_partial", success=success_count, fail=fail_count))
 
     def _clear_all(self):
         """Clear all selections and results."""

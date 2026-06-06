@@ -1,7 +1,7 @@
 """Lyrics Matcher GUI application with multi-provider search and multi-select support."""
 
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from pathlib import Path
 from typing import Optional, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor

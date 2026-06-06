@@ -1,9 +1,9 @@
-"""Lyrics Matcher GUI application with multi-provider search."""
+"""Lyrics Matcher GUI application with multi-provider search and multi-select support."""
 
 import tkinter as tk
 from tkinter import filedialog, ttk
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor
 
 from .audio import (
@@ -28,13 +28,14 @@ class LyricsMatcherGUI:
 
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Lyrics Matcher v0.2")
-        self.root.geometry("900x700")
+        self.root.title("Lyrics Matcher v0.3")
+        self.root.geometry("900x750")
 
         self.provider = MultiProvider(timeout=15, max_workers=4)
         self.selected_files: List[Path] = []
         self.search_results: List[Tuple[Path, LyricTrack]] = []
         self.current_lyrics: Optional[LyricTrack] = None
+        self.selected_indices: Set[int] = set()
         self.current_format = tk.StringVar(value="lrc")
 
         self._create_widgets()
@@ -72,22 +73,49 @@ class LyricsMatcherGUI:
 
         ttk.Button(
             btn_frame,
-            text="Save to File",
-            command=self._save_to_file,
-        ).grid(row=0, column=3, padx=(0, 5))
-
-        ttk.Button(
-            btn_frame,
-            text="Write to Tag",
-            command=self._write_to_tag,
-        ).grid(row=0, column=4, padx=(0, 5))
-
-        ttk.Button(
-            btn_frame,
             text="Clear",
             command=self._clear_all,
-        ).grid(row=0, column=5)
+        ).grid(row=0, column=3, padx=(0, 5))
 
+        # Results selection buttons
+        selection_frame = ttk.LabelFrame(btn_frame, text="Selection", padding="5")
+        selection_frame.grid(row=0, column=4, padx=(10, 0))
+
+        ttk.Button(
+            selection_frame,
+            text="Select All",
+            command=self._select_all_results,
+        ).grid(row=0, column=0, padx=(0, 3))
+
+        ttk.Button(
+            selection_frame,
+            text="Deselect All",
+            command=self._deselect_all_results,
+        ).grid(row=0, column=1, padx=(0, 3))
+
+        ttk.Button(
+            selection_frame,
+            text="Invert Selection",
+            command=self._invert_selection,
+        ).grid(row=0, column=2)
+
+        # Save options
+        save_frame = ttk.LabelFrame(btn_frame, text="Save Options", padding="5")
+        save_frame.grid(row=0, column=5, padx=(10, 0))
+
+        ttk.Button(
+            save_frame,
+            text="Save Selected",
+            command=self._save_selected_to_file,
+        ).grid(row=0, column=0, padx=(0, 3))
+
+        ttk.Button(
+            save_frame,
+            text="Write Tags (Selected)",
+            command=self._write_selected_tags,
+        ).grid(row=0, column=1)
+
+        # Format selection
         format_frame = ttk.LabelFrame(btn_frame, text="Format", padding="5")
         format_frame.grid(row=0, column=6, padx=(10, 0))
 
@@ -124,15 +152,16 @@ class LyricsMatcherGUI:
             row=1, column=0, sticky="w", pady=(0, 5)
         )
 
+        # Selected files list
         list_frame = ttk.Frame(main_frame)
         list_frame.grid(row=2, column=0, sticky="nsew")
         list_frame.columnconfigure(0, weight=1)
-        list_frame.rowconfigure(0, weight=1)
+        list_frame.rowconfigure(1, weight=1)
 
-        file_label = ttk.Label(list_frame, text="Selected Files:")
+        file_label = ttk.Label(list_frame, text="Selected Audio Files:")
         file_label.grid(row=0, column=0, sticky="w", pady=(0, 5))
 
-        self.file_listbox = tk.Listbox(list_frame, height=6)
+        self.file_listbox = tk.Listbox(list_frame, height=5)
         self.file_listbox.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical")
@@ -140,21 +169,28 @@ class LyricsMatcherGUI:
         scrollbar.grid(row=1, column=1, sticky="ns")
         self.file_listbox.config(yscrollcommand=scrollbar.set)
 
-        results_frame = ttk.LabelFrame(main_frame, text="Search Results (Multi-Provider)", padding="5")
+        # Search results - with extended selection for multi-select
+        results_frame = ttk.LabelFrame(main_frame, text="Search Results (Ctrl+Click for multi-select)", padding="5")
         results_frame.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
         results_frame.columnconfigure(0, weight=1)
         results_frame.rowconfigure(0, weight=1)
 
-        self.results_listbox = tk.Listbox(results_frame, height=6)
+        self.results_listbox = tk.Listbox(
+            results_frame,
+            height=6,
+            selectmode=tk.EXTENDED,  # Enable multi-select
+        )
         self.results_listbox.grid(row=0, column=0, sticky="ew")
         self.results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
+        self.results_listbox.bind("<Control-a>", lambda e: self._select_all_results())
 
         scrollbar2 = ttk.Scrollbar(results_frame, orient="vertical")
         scrollbar2.config(command=self.results_listbox.yview)
         scrollbar2.grid(row=0, column=1, sticky="ns")
         self.results_listbox.config(yscrollcommand=scrollbar2.set)
 
-        lyrics_frame = ttk.LabelFrame(main_frame, text="Lyrics Preview", padding="5")
+        # Lyrics preview
+        lyrics_frame = ttk.LabelFrame(main_frame, text="Lyrics Preview (Double-click to save)", padding="5")
         lyrics_frame.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
         lyrics_frame.columnconfigure(0, weight=1)
         lyrics_frame.rowconfigure(0, weight=1)
@@ -214,6 +250,7 @@ class LyricsMatcherGUI:
 
         self.results_listbox.delete(0, tk.END)
         self.search_results = []
+        self.selected_indices = set()
 
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = {}
@@ -247,10 +284,14 @@ class LyricsMatcherGUI:
         """Update the results list display."""
         self.results_listbox.delete(0, tk.END)
 
-        for file_path, track in self.search_results:
+        for idx, (file_path, track) in enumerate(self.search_results):
             source_icon = {"LRCLIB": "L", "Netease": "N", "QQ Music": "Q"}.get(track.source, "?")
             line = f"[{source_icon}] {track.artist_name} - {track.track_name}"
             self.results_listbox.insert(tk.END, line)
+
+            # Apply selection highlight
+            if idx in self.selected_indices:
+                self.results_listbox.selection_set(idx)
 
     def _on_result_select(self, event):
         """Handle result selection."""
@@ -258,6 +299,10 @@ class LyricsMatcherGUI:
         if not selection:
             return
 
+        # Update selected indices
+        self.selected_indices = set(selection)
+
+        # Show first selected item's lyrics
         idx = selection[0]
         if idx < len(self.search_results):
             _, track = self.search_results[idx]
@@ -267,77 +312,90 @@ class LyricsMatcherGUI:
             self.lyrics_text.delete("1.0", tk.END)
             self.lyrics_text.insert("1.0", lyrics)
 
-    def _get_formatted_lyrics(self) -> str:
-        """Get lyrics in the selected format."""
-        if not self.current_lyrics:
-            return ""
+    def _select_all_results(self):
+        """Select all results."""
+        self.results_listbox.select_set(0, tk.END)
+        self.selected_indices = set(range(len(self.search_results)))
 
-        base_lyrics = self.current_lyrics.synced_lyrics or self.current_lyrics.plain_lyrics or ""
+    def _deselect_all_results(self):
+        """Deselect all results."""
+        self.results_listbox.selection_clear(0, tk.END)
+        self.selected_indices = set()
+
+    def _invert_selection(self):
+        """Invert current selection."""
+        all_indices = set(range(len(self.search_results)))
+        self.selected_indices = all_indices - self.selected_indices
+        self.results_listbox.selection_clear(0, tk.END)
+        for idx in self.selected_indices:
+            self.results_listbox.selection_set(idx)
+
+    def _get_formatted_lyrics(self, track: LyricTrack, file_path: Path) -> str:
+        """Get lyrics in the selected format for a specific track."""
+        base_lyrics = track.synced_lyrics or track.plain_lyrics or ""
         output_format = self.current_format.get()
-        metadata = None
-
-        for file_path, track in self.search_results:
-            if track.id == self.current_lyrics.id:
-                metadata = get_metadata(file_path)
-                break
+        metadata = get_metadata(file_path)
 
         if output_format == "lrc":
             return base_lyrics
         elif output_format == "enhanced":
-            return convert_to_enhanced_lrc(base_lyrics, self.current_lyrics.duration)
+            return convert_to_enhanced_lrc(base_lyrics, track.duration)
         elif output_format == "srt":
             return convert_lrc_to_srt(base_lyrics)
         elif output_format == "ass":
-            title = metadata.title if metadata else ""
-            artist = metadata.artist if metadata else ""
-            return convert_lrc_to_ass(base_lyrics, title, artist)
+            return convert_lrc_to_ass(base_lyrics, metadata.title or "", metadata.artist or "")
 
         return base_lyrics
 
-    def _save_to_file(self):
-        """Save selected lyrics to a separate file."""
-        if not self.current_lyrics:
-            self.status_var.set("No lyrics selected")
+    def _save_selected_to_file(self):
+        """Save all selected lyrics to files."""
+        if not self.selected_indices:
+            self.status_var.set("No lyrics selected - use Ctrl+Click or Select All")
             return
 
-        selection = self.results_listbox.curselection()
-        if not selection:
-            self.status_var.set("Please select a lyrics result first")
-            return
-
-        idx = selection[0]
-        file_path, _ = self.search_results[idx]
-
-        lyrics = self._get_formatted_lyrics()
         lyrics_format = LyricsFormat(self.current_format.get())
-        lyrics_path = save_lyrics_to_file(file_path, lyrics, lyrics_format)
-        self.status_var.set(f"Saved to {lyrics_path.name}")
+        saved_count = 0
 
-    def _write_to_tag(self):
-        """Write lyrics directly to audio file metadata tags."""
-        if not self.current_lyrics:
-            self.status_var.set("No lyrics selected")
+        for idx in self.selected_indices:
+            if idx < len(self.search_results):
+                file_path, track = self.search_results[idx]
+                lyrics = self._get_formatted_lyrics(track, file_path)
+                if lyrics:
+                    lyrics_path = save_lyrics_to_file(file_path, lyrics, lyrics_format)
+                    saved_count += 1
+
+        self.status_var.set(f"Saved {saved_count} lyrics files")
+
+    def _write_selected_tags(self):
+        """Write lyrics to tags for all selected results."""
+        if not self.selected_indices:
+            self.status_var.set("No lyrics selected - use Ctrl+Click or Select All")
             return
 
-        selection = self.results_listbox.curselection()
-        if not selection:
-            self.status_var.set("Please select a lyrics result first")
-            return
+        success_count = 0
+        fail_count = 0
 
-        idx = selection[0]
-        file_path, _ = self.search_results[idx]
+        for idx in self.selected_indices:
+            if idx < len(self.search_results):
+                file_path, track = self.search_results[idx]
+                lyrics = track.synced_lyrics or track.plain_lyrics or ""
+                if lyrics:
+                    if write_lyrics_to_tag(file_path, lyrics):
+                        success_count += 1
+                    else:
+                        fail_count += 1
 
-        lyrics = self.current_lyrics.synced_lyrics or self.current_lyrics.plain_lyrics or ""
-        if write_lyrics_to_tag(file_path, lyrics):
-            self.status_var.set(f"Wrote lyrics to tag: {file_path.name}")
+        if fail_count == 0:
+            self.status_var.set(f"Wrote tags to {success_count} files")
         else:
-            self.status_var.set(f"Failed to write lyrics to tag: {file_path.name}")
+            self.status_var.set(f"Success: {success_count}, Failed: {fail_count}")
 
     def _clear_all(self):
         """Clear all selections and results."""
         self.selected_files = []
         self.search_results = []
         self.current_lyrics = None
+        self.selected_indices = set()
         self.file_listbox.delete(0, tk.END)
         self.results_listbox.delete(0, tk.END)
         self.lyrics_text.delete("1.0", tk.END)

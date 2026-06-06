@@ -294,23 +294,26 @@ class MultiProvider:
 
 def parse_lrc_timestamp(line: str) -> Optional[float]:
     """Parse LRC timestamp to seconds."""
-    pattern = r"\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]"
+    pattern = r"\[(\d{2}):(\d{2})(?:\.(\d+))?\]"
     match = re.search(pattern, line)
     if match:
         minutes = int(match.group(1))
         seconds = int(match.group(2))
-        ms = int(match.group(3) or "0")
-        if len(str(ms)) == 2:
-            ms *= 10
+        ms_str = match.group(3) or "0"
+        ms_str = ms_str.ljust(3, '0')[:3]
+        ms = int(ms_str)
         return minutes * 60 + seconds + ms / 1000
     return None
 
 
 def format_lrc_timestamp(seconds: float) -> str:
     """Format seconds to LRC timestamp."""
-    minutes = int(seconds // 60)
-    secs = int(seconds % 60)
-    ms = int((seconds % 1) * 100)
+    total_ms = round(seconds * 1000)
+    minutes = total_ms // 60000
+    secs = (total_ms % 60000) // 1000
+    ms = (total_ms % 60000) % 1000
+    if ms % 10 == 0:
+        return f"[{minutes:02d}:{secs:02d}.{ms // 10:02d}]"
     return f"[{minutes:02d}:{secs:02d}.{ms:02d}]"
 
 

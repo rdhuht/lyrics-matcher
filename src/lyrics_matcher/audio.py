@@ -226,15 +226,16 @@ def _format_srt_entry(index: int, start_ms: int, end_ms: int, text: str) -> str:
     return f"{index}\n{start} --> {end}\n{text}"
 
 
-def _ms_to_srt_time(ms: int) -> str:
+def _ms_to_srt_time(ms: float) -> str:
     """Convert milliseconds to SRT time format (HH:MM:SS,mmm)."""
-    hours = ms // 3600000
-    ms %= 3600000
-    minutes = ms // 60000
-    ms %= 60000
-    seconds = ms // 1000
-    ms %= 1000
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
+    ms_int = int(ms)
+    hours = ms_int // 3600000
+    ms_int %= 3600000
+    minutes = ms_int // 60000
+    ms_int %= 60000
+    seconds = ms_int // 1000
+    ms_int %= 1000
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms_int:03d}"
 
 
 def convert_lrc_to_ass(lrc: str, title: str = "", artist: str = "") -> str:

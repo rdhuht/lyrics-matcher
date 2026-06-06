@@ -27,15 +27,15 @@ class LyricsMatcherGUI:
     """Main GUI application for lyrics matching."""
 
     def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Lyrics Matcher v0.2")
+        self.root.geometry("900x700")
+
         self.provider = MultiProvider(timeout=15, max_workers=4)
         self.selected_files: List[Path] = []
         self.search_results: List[Tuple[Path, LyricTrack]] = []
         self.current_lyrics: Optional[LyricTrack] = None
         self.current_format = tk.StringVar(value="lrc")
-
-        self.root = tk.Tk()
-        self.root.title("Lyrics Matcher v0.2")
-        self.root.geometry("900x700")
 
         self._create_widgets()
 

@@ -1,0 +1,14 @@
+LICENSE
+README.md
+pyproject.toml
+src/lyrics_matcher/__init__.py
+src/lyrics_matcher/__main__.py
+src/lyrics_matcher/audio.py
+src/lyrics_matcher/gui.py
+src/lyrics_matcher/provider.py
+src/lyrics_matcher.egg-info/PKG-INFO
+src/lyrics_matcher.egg-info/SOURCES.txt
+src/lyrics_matcher.egg-info/dependency_links.txt
+src/lyrics_matcher.egg-info/requires.txt
+src/lyrics_matcher.egg-info/top_level.txt
+tests/test_lyrics_matcher.py

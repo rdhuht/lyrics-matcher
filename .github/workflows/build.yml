@@ -26,52 +26,37 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: |
-          pip install -e .
-          pip install pyinstaller pillow
+        run: pip install -e .
 
       - name: Get version
         id: version
         run: |
-          $version = Select-String -Path "src/lyrics_matcher/__init__.py" -Pattern 'version = "(.*?)"' | ForEach-Object { $_.Matches.Groups[1].Value }
-          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-          echo "VERSION_STR=v$version" >> $env:GITHUB_OUTPUT
+          $content = Get-Content "src/lyrics_matcher/__init__.py" -Raw
+          if ($content -match 'version = "(.*?)"') {
+            $ver = $matches[1]
+            echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+            echo "VERSION_STR=v$ver" >> $env:GITHUB_OUTPUT
+          }
 
       - name: Build executable
         run: |
-          pyinstaller `
-            --name LyricsMatcher `
-            --onedir `
-            --console false `
-            --add-data "README.md;." `
-            --hidden-import PIL._tkinter_finder `
-            --hidden-import tkinter `
-            --hidden-import mutagen `
-            --hidden-import mutagen.mp3 `
-            --hidden-import mutagen.flac `
-            --hidden-import mutagen.oggvorbis `
-            --hidden-import mutagen.mp4 `
-            --hidden-import mutagen.wave `
-            --hidden-import requests `
-            --collect-all mutagen `
-            --collect-all tkinter `
-            src/lyrics_matcher/__main__.py
+          pip install pyinstaller pillow
+          pyinstaller --name LyricsMatcher --onedir --console false --windowed --distpath dist --workpath build --add-data "README.md;." src/lyrics_matcher/__main__.py
 
-      - name: Copy files to distribution
+      - name: Copy files
         run: |
-          Copy-Item "README.md" "dist/LyricsMatcher/"
-          Copy-Item "LICENSE" "dist/LyricsMatcher/"
+          Copy-Item "README.md" "dist/LyricsMatcher/" -ErrorAction SilentlyContinue
+          Copy-Item "LICENSE" "dist/LyricsMatcher/" -ErrorAction SilentlyContinue
 
-      - name: Create zip archive
+      - name: Create zip
         run: |
           $version = "${{ steps.version.outputs.VERSION_STR }}"
           Compress-Archive -Path "dist/LyricsMatcher/*" -DestinationPath "dist/LyricsMatcher-$version-win.zip" -Force
-          Get-ChildItem -Path "dist" -Filter "*.zip" | Format-Table -AutoSize
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LyricsMatcher-windows-${{ github.run_number }}
+          name: LyricsMatcher-windows
           path: dist/LyricsMatcher-*.zip
 
   release:
@@ -86,7 +71,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: LyricsMatcher-windows-${{ github.run_number }}
+          name: LyricsMatcher-windows
           path: dist
 
       - name: Create Release

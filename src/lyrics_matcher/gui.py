@@ -29,7 +29,8 @@ class LyricsMatcherGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title(i18n.t("app_title"))
-        self.root.geometry("900x750")
+        self.root.geometry("1000x800")
+        self.root.minsize(800, 600)
 
         self.provider = MultiProvider(timeout=15, max_workers=4)
         self.selected_files: List[Path] = []
@@ -119,47 +120,65 @@ class LyricsMatcherGUI:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(2, weight=1)
+        main_frame.rowconfigure(3, weight=1)
 
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        # Row 1: Main actions
+        row1_frame = ttk.Frame(main_frame)
+        row1_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
 
         self.btn_select_files = ttk.Button(
-            btn_frame,
+            row1_frame,
             text=i18n.t("btn_select_files"),
             command=self._select_files,
+            width=12,
         )
         self.btn_select_files.grid(row=0, column=0, padx=(0, 5))
 
         self.btn_select_folder = ttk.Button(
-            btn_frame,
+            row1_frame,
             text=i18n.t("btn_select_folder"),
             command=self._select_folder,
+            width=12,
         )
         self.btn_select_folder.grid(row=0, column=1, padx=(0, 5))
 
         self.btn_search = ttk.Button(
-            btn_frame,
+            row1_frame,
             text=i18n.t("btn_search"),
             command=self._search_lyrics,
+            width=12,
         )
         self.btn_search.grid(row=0, column=2, padx=(0, 5))
 
         self.btn_clear = ttk.Button(
-            btn_frame,
+            row1_frame,
             text=i18n.t("btn_clear"),
             command=self._clear_all,
+            width=8,
         )
         self.btn_clear.grid(row=0, column=3, padx=(0, 5))
 
+        self.btn_save_selected = ttk.Button(
+            row1_frame,
+            text=i18n.t("btn_save_selected"),
+            command=self._save_selected_to_file,
+            width=12,
+        )
+        self.btn_save_selected.grid(row=0, column=4, padx=(0, 5))
+
+        # Row 2: Selection and format
+        row2_frame = ttk.Frame(main_frame)
+        row2_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+
         # Selection buttons
-        selection_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_selection"), padding="5")
-        selection_frame.grid(row=0, column=4, padx=(10, 0))
+        selection_frame = ttk.LabelFrame(row2_frame, text=i18n.t("label_selection"), padding="5")
+        selection_frame.grid(row=0, column=0, padx=(0, 10))
 
         self.btn_select_all = ttk.Button(
             selection_frame,
             text=i18n.t("btn_select_all"),
             command=self._select_all_results,
+            width=8,
         )
         self.btn_select_all.grid(row=0, column=0, padx=(0, 3))
 
@@ -167,6 +186,7 @@ class LyricsMatcherGUI:
             selection_frame,
             text=i18n.t("btn_deselect_all"),
             command=self._deselect_all_results,
+            width=8,
         )
         self.btn_deselect_all.grid(row=0, column=1, padx=(0, 3))
 
@@ -174,20 +194,13 @@ class LyricsMatcherGUI:
             selection_frame,
             text=i18n.t("btn_invert_selection"),
             command=self._invert_selection,
+            width=6,
         )
         self.btn_invert.grid(row=0, column=2)
 
-        # Save button
-        self.btn_save_selected = ttk.Button(
-            btn_frame,
-            text=i18n.t("btn_save_selected"),
-            command=self._save_selected_to_file,
-        )
-        self.btn_save_selected.grid(row=0, column=5, padx=(10, 0))
-
         # Format selection
-        format_frame = ttk.LabelFrame(btn_frame, text=i18n.t("label_format"), padding="5")
-        format_frame.grid(row=0, column=6, padx=(10, 0))
+        format_frame = ttk.LabelFrame(row2_frame, text=i18n.t("label_format"), padding="5")
+        format_frame.grid(row=0, column=1)
 
         self.radio_lrc = ttk.Radiobutton(
             format_frame,
@@ -223,19 +236,19 @@ class LyricsMatcherGUI:
 
         self.status_var = tk.StringVar(value=i18n.t("ready_status"))
         ttk.Label(main_frame, textvariable=self.status_var).grid(
-            row=1, column=0, sticky="w", pady=(0, 5)
+            row=2, column=0, sticky="w", pady=(0, 5)
         )
 
         # Selected files list
         list_frame = ttk.Frame(main_frame)
-        list_frame.grid(row=2, column=0, sticky="nsew")
+        list_frame.grid(row=3, column=0, sticky="nsew")
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(1, weight=1)
 
         self.label_files = ttk.Label(list_frame, text=i18n.t("label_files"))
         self.label_files.grid(row=0, column=0, sticky="w", pady=(0, 5))
 
-        self.file_listbox = tk.Listbox(list_frame, height=5)
+        self.file_listbox = tk.Listbox(list_frame, height=4)
         self.file_listbox.grid(row=1, column=0, sticky="ew", pady=(0, 10))
 
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical")
@@ -245,7 +258,7 @@ class LyricsMatcherGUI:
 
         # Search results
         self.label_results = ttk.LabelFrame(main_frame, text=i18n.t("label_results"), padding="5")
-        self.label_results.grid(row=3, column=0, sticky="nsew", pady=(10, 0))
+        self.label_results.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
         self.label_results.columnconfigure(0, weight=1)
         self.label_results.rowconfigure(0, weight=1)
 
@@ -265,7 +278,7 @@ class LyricsMatcherGUI:
 
         # Lyrics preview
         self.label_preview = ttk.LabelFrame(main_frame, text=i18n.t("label_preview"), padding="5")
-        self.label_preview.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
+        self.label_preview.grid(row=5, column=0, sticky="nsew", pady=(10, 0))
         self.label_preview.columnconfigure(0, weight=1)
         self.label_preview.rowconfigure(0, weight=1)
 

@@ -62,11 +62,20 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'push'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          $content = Get-Content "src/lyrics_matcher/__init__.py" -Raw
+          if ($content -match 'version = "(.*?)"') {
+            $ver = $matches[1]
+            echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          }
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -77,6 +86,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          name: Release v${{ steps.version.outputs.VERSION }}
           files: dist/LyricsMatcher-*.zip
           generate_release_notes: true
         env:

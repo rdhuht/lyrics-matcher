@@ -41,7 +41,7 @@ jobs:
       - name: Build executable
         run: |
           pip install pyinstaller pillow
-          python -m PyInstaller --name LyricsMatcher --onedir --console false --distpath dist --add-data "README.md;." src/lyrics_matcher/__main__.py
+          pyinstaller --name LyricsMatcher --onedir --noconsole --add-data "README.md;." --distpath dist src/lyrics_matcher/__main__.py
 
       - name: Copy files
         run: |

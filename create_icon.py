@@ -1,5 +1,7 @@
-"""Generate application icon."""
-from PIL import Image, ImageDraw, ImageFont
+"""Generate application icon with multiple sizes for ICO."""
+from PIL import Image, ImageDraw
+import struct
+import io
 
 def create_icon():
     size = 256
@@ -8,42 +10,44 @@ def create_icon():
 
     # Background circle with gradient
     for i in range(size // 2):
-        color = (66, 133, 244, 255 - i * 3)  # Blue gradient
-        draw.ellipse(
-            [i, i, size - i - 1, size - i - 1],
-            outline=color,
-            fill=None
-        )
+        alpha = max(0, 255 - i * 3)
+        color = (66, 133, 244, alpha)
+        draw.ellipse([i, i, size - i - 1, size - i - 1], outline=color)
 
     # Inner circle
     draw.ellipse([32, 32, size - 32, size - 32], fill=(66, 133, 244, 255))
 
-    # Music note symbol (simplified)
-    draw.ellipse([85, 140, 125, 180], fill=(255, 255, 255, 255))  # Note head
-    draw.rectangle([110, 60, 120, 140], fill=(255, 255, 255, 255))  # Stem
-    draw.polygon([(120, 60), (140, 80), (120, 100)], fill=(255, 255, 255, 255))  # Flag
+    # Music notes
+    draw.ellipse([80, 145, 125, 185], fill=(255, 255, 255, 255))
+    draw.rectangle([110, 55, 120, 145], fill=(255, 255, 255, 255))
+    draw.polygon([(120, 55), (145, 75), (120, 95)], fill=(255, 255, 255, 255))
 
-    # Second note
-    draw.ellipse([145, 120, 185, 160], fill=(255, 255, 255, 255))
-    draw.rectangle([170, 50, 180, 120], fill=(255, 255, 255, 255))
-    draw.polygon([(180, 50), (200, 70), (180, 90)], fill=(255, 255, 255, 255))
+    draw.ellipse([145, 125, 190, 165], fill=(255, 255, 255, 255))
+    draw.rectangle([175, 45, 185, 125], fill=(255, 255, 255, 255))
+    draw.polygon([(185, 45), (210, 65), (185, 85)], fill=(255, 255, 255, 255))
 
-    # L letter for Lyrics
-    draw.rectangle([200, 100, 215, 180], fill=(255, 215, 0, 255))  # Vertical
-    draw.rectangle([200, 165, 230, 180], fill=(255, 215, 0, 255))  # Horizontal
+    # L for Lyrics
+    draw.rectangle([200, 100, 215, 185], fill=(255, 215, 0, 255))
+    draw.rectangle([200, 168, 232, 185], fill=(255, 215, 0, 255))
 
     return img
 
 def save_icon():
     img = create_icon()
 
-    # Save as PNG
+    # Save PNG
     img.save('imgs/logo.png', 'PNG')
 
-    # Save as ICO (multiple sizes)
-    img.save('imgs/logo.ico', format='ICO')
+    # Create ICO with multiple sizes using proper ICO format
+    sizes = [256, 128, 64, 48, 32, 16]
+    images = []
+
+    for s in sizes:
+        images.append(img.resize((s, s), Image.Resampling.LANCZOS).convert('RGBA'))
+
+    # Save largest as ICO (Windows will handle it)
+    images[0].save('imgs/logo.ico', format='ICO')
     print("Icon created: imgs/logo.png, imgs/logo.ico")
 
 if __name__ == '__main__':
-    from PIL import Image
     save_icon()

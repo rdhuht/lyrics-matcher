@@ -2,6 +2,7 @@
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font as tkfont
 from pathlib import Path
 from typing import Optional, List, Tuple, Set
 from concurrent.futures import ThreadPoolExecutor
@@ -38,20 +39,9 @@ COLORS = {
     'hover': '#E8F0FE',
 }
 
-FONTS = {
-    'title': ('Segoe UI', 14, 'bold'),
-    'heading': ('Segoe UI', 11, 'bold'),
-    'body': ('Segoe UI', 10),
-    'small': ('Segoe UI', 9),
-}
-
-
-class ModernButton(ttk.Button):
-    """Styled button with hover effect."""
-
-    def __init__(self, master=None, **kwargs):
-        style = kwargs.pop('style', 'Modern.TButton')
-        super().__init__(master, style=style, **kwargs)
+# Font families
+FONT_FAMILY = 'Segoe UI'
+FONT_MONO = 'Consolas'
 
 
 class LyricsMatcherGUI:
@@ -63,6 +53,22 @@ class LyricsMatcherGUI:
         self.root.geometry("1100x850")
         self.root.minsize(900, 700)
         self.root.configure(bg=COLORS['bg'])
+
+        # Create named fonts
+        self.fonts = {
+            'title': tkfont.nametofont('TkDefaultFont').copy(),
+            'heading': tkfont.nametofont('TkDefaultFont').copy(),
+            'body': tkfont.nametofont('TkDefaultFont').copy(),
+            'small': tkfont.nametofont('TkDefaultFont').copy(),
+            'header': tkfont.nametofont('TkDefaultFont').copy(),
+            'mono': tkfont.nametofont('TkFixedFont').copy(),
+        }
+        self.fonts['title'].configure(size=14, weight='bold')
+        self.fonts['heading'].configure(size=11, weight='bold')
+        self.fonts['body'].configure(size=10, weight='normal')
+        self.fonts['small'].configure(size=9, weight='normal')
+        self.fonts['header'].configure(size=18, weight='bold')
+        self.fonts['mono'].configure(size=10)
 
         # Configure styles
         self._configure_styles()
@@ -85,7 +91,7 @@ class LyricsMatcherGUI:
 
         # Button style
         style.configure('Modern.TButton',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             padding=(12, 6),
             background=COLORS['primary'],
             foreground='white',
@@ -97,7 +103,7 @@ class LyricsMatcherGUI:
 
         # Secondary button
         style.configure('Secondary.TButton',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             padding=(12, 6),
             background=COLORS['secondary'],
             foreground='white',
@@ -109,7 +115,7 @@ class LyricsMatcherGUI:
 
         # Outline button
         style.configure('Outline.TButton',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             padding=(12, 6),
             background=COLORS['surface'],
             foreground=COLORS['primary'],
@@ -133,19 +139,19 @@ class LyricsMatcherGUI:
             background=COLORS['surface'],
         )
         style.configure('Heading.TLabel',
-            font=FONTS['heading'],
+            font=self.fonts['heading'],
             foreground=COLORS['text'],
             background=COLORS['surface'],
         )
         style.configure('Body.TLabel',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             foreground=COLORS['text_secondary'],
             background=COLORS['surface'],
         )
 
         # Radiobutton style
         style.configure('Modern.TRadiobutton',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             foreground=COLORS['text'],
             background=COLORS['surface'],
             padding=5,
@@ -153,11 +159,11 @@ class LyricsMatcherGUI:
 
         # Treeview style
         style.configure('Treeview',
-            font=FONTS['body'],
+            font=self.fonts['body'],
             rowheight=28,
         )
         style.configure('Treeview.Heading',
-            font=FONTS['heading'],
+            font=self.fonts['heading'],
             background=COLORS['primary'],
             foreground='white',
         )
@@ -168,11 +174,11 @@ class LyricsMatcherGUI:
         self.root.config(menu=menubar)
 
         file_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
-        menubar.add_cascade(label=i18n.t("menu_file"), menu=file_menu, font=FONTS['body'])
+        menubar.add_cascade(label=i18n.t("menu_file"), menu=file_menu, font=self.fonts['body'])
         file_menu.add_command(label=i18n.t("menu_exit"), command=self.root.quit)
 
         lang_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
-        menubar.add_cascade(label=i18n.t("menu_language"), menu=lang_menu, font=FONTS['body'])
+        menubar.add_cascade(label=i18n.t("menu_language"), menu=lang_menu, font=self.fonts['body'])
 
         self.lang_var = tk.StringVar(value=i18n.get_language())
         for lang_code, lang_name in LANGUAGES.items():
@@ -184,7 +190,7 @@ class LyricsMatcherGUI:
             )
 
         help_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
-        menubar.add_cascade(label=i18n.t("menu_help"), menu=help_menu, font=FONTS['body'])
+        menubar.add_cascade(label=i18n.t("menu_help"), menu=help_menu, font=self.fonts['body'])
         help_menu.add_command(label=i18n.t("menu_about"), command=self._show_about)
 
     def _change_language(self):
@@ -239,7 +245,7 @@ class LyricsMatcherGUI:
         tk.Label(
             header_frame,
             text="🎵 " + i18n.t("app_title"),
-            font=('Segoe UI', 18, 'bold'),
+            font=self.fonts['header'],
             fg='white',
             bg=COLORS['primary'],
             padx=15,
@@ -251,7 +257,7 @@ class LyricsMatcherGUI:
         tk.Label(
             header_frame,
             textvariable=self.status_var,
-            font=FONTS['small'],
+            font=self.fonts['small'],
             fg='white',
             bg=COLORS['primary_dark'],
             padx=15,
@@ -315,7 +321,7 @@ class LyricsMatcherGUI:
         selection_frame = tk.LabelFrame(
             row2_frame,
             text=i18n.t("label_selection"),
-            font=FONTS['small'],
+            font=self.fonts['small'],
             bg=COLORS['surface'],
             fg=COLORS['text'],
             padx=10,
@@ -351,7 +357,7 @@ class LyricsMatcherGUI:
         format_frame = tk.LabelFrame(
             row2_frame,
             text=i18n.t("label_format"),
-            font=FONTS['small'],
+            font=self.fonts['small'],
             bg=COLORS['surface'],
             fg=COLORS['text'],
             padx=10,
@@ -409,7 +415,7 @@ class LyricsMatcherGUI:
         self.label_files = tk.Label(
             left_panel,
             text=i18n.t("label_files"),
-            font=FONTS['heading'],
+            font=self.fonts['heading'],
             fg=COLORS['text'],
             bg=COLORS['bg'],
         )
@@ -421,7 +427,7 @@ class LyricsMatcherGUI:
 
         self.file_listbox = tk.Listbox(
             files_frame,
-            font=FONTS['body'],
+            font=self.fonts['body'],
             bg=COLORS['surface'],
             fg=COLORS['text'],
             selectbackground=COLORS['primary'],
@@ -440,7 +446,7 @@ class LyricsMatcherGUI:
         self.label_results = tk.Label(
             left_panel,
             text=i18n.t("label_results"),
-            font=FONTS['heading'],
+            font=self.fonts['heading'],
             fg=COLORS['text'],
             bg=COLORS['bg'],
         )
@@ -452,7 +458,7 @@ class LyricsMatcherGUI:
 
         self.results_listbox = tk.Listbox(
             results_frame,
-            font=FONTS['body'],
+            font=self.fonts['body'],
             bg=COLORS['surface'],
             fg=COLORS['text'],
             selectbackground=COLORS['secondary'],
@@ -477,7 +483,7 @@ class LyricsMatcherGUI:
         self.label_preview = tk.Label(
             right_panel,
             text=i18n.t("label_preview"),
-            font=FONTS['heading'],
+            font=self.fonts['heading'],
             fg=COLORS['text'],
             bg=COLORS['bg'],
         )

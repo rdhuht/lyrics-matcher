@@ -71,11 +71,8 @@ jobs:
       - name: Get version
         id: version
         run: |
-          $content = Get-Content "src/lyrics_matcher/__init__.py" -Raw
-          if ($content -match 'version = "(.*?)"') {
-            $ver = $matches[1]
-            echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-          }
+          ver=$(grep -oP 'version = "\K[^"]+' src/lyrics_matcher/__init__.py)
+          echo "VERSION=$ver" >> $GITHUB_OUTPUT
 
       - name: Download artifact
         uses: actions/download-artifact@v4

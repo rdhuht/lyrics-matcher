@@ -1,4 +1,4 @@
-"""Lyrics Matcher GUI application with multi-provider search and multi-select support."""
+"""Lyrics Matcher GUI application with modern UI design."""
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -23,14 +23,49 @@ from .provider import (
 from .i18n import i18n, LANGUAGES, set_language
 
 
+# Modern color scheme
+COLORS = {
+    'primary': '#4285F4',
+    'primary_dark': '#3367D6',
+    'secondary': '#34A853',
+    'accent': '#EA4335',
+    'warning': '#FBBC04',
+    'bg': '#F8F9FA',
+    'surface': '#FFFFFF',
+    'text': '#202124',
+    'text_secondary': '#5F6368',
+    'border': '#DADCE0',
+    'hover': '#E8F0FE',
+}
+
+FONTS = {
+    'title': ('Segoe UI', 14, 'bold'),
+    'heading': ('Segoe UI', 11, 'bold'),
+    'body': ('Segoe UI', 10),
+    'small': ('Segoe UI', 9),
+}
+
+
+class ModernButton(ttk.Button):
+    """Styled button with hover effect."""
+
+    def __init__(self, master=None, **kwargs):
+        style = kwargs.pop('style', 'Modern.TButton')
+        super().__init__(master, style=style, **kwargs)
+
+
 class LyricsMatcherGUI:
-    """Main GUI application for lyrics matching."""
+    """Main GUI application with modern design."""
 
     def __init__(self):
         self.root = tk.Tk()
         self.root.title(i18n.t("app_title"))
-        self.root.geometry("1000x800")
-        self.root.minsize(800, 600)
+        self.root.geometry("1100x850")
+        self.root.minsize(900, 700)
+        self.root.configure(bg=COLORS['bg'])
+
+        # Configure styles
+        self._configure_styles()
 
         self.provider = MultiProvider(timeout=15, max_workers=4)
         self.selected_files: List[Path] = []
@@ -43,19 +78,101 @@ class LyricsMatcherGUI:
         self._create_widgets()
         self._update_ui_texts()
 
+    def _configure_styles(self):
+        """Configure ttk styles for modern look."""
+        style = ttk.Style()
+        style.theme_use('clam')
+
+        # Button style
+        style.configure('Modern.TButton',
+            font=FONTS['body'],
+            padding=(12, 6),
+            background=COLORS['primary'],
+            foreground='white',
+        )
+        style.map('Modern.TButton',
+            background=[('active', COLORS['primary_dark']), ('pressed', COLORS['primary_dark'])],
+            foreground=[('active', 'white'), ('pressed', 'white')],
+        )
+
+        # Secondary button
+        style.configure('Secondary.TButton',
+            font=FONTS['body'],
+            padding=(12, 6),
+            background=COLORS['secondary'],
+            foreground='white',
+        )
+        style.map('Secondary.TButton',
+            background=[('active', '#2D9348'), ('pressed', '#2D9348')],
+            foreground=[('active', 'white'), ('pressed', 'white')],
+        )
+
+        # Outline button
+        style.configure('Outline.TButton',
+            font=FONTS['body'],
+            padding=(12, 6),
+            background=COLORS['surface'],
+            foreground=COLORS['primary'],
+            bordercolor=COLORS['primary'],
+        )
+        style.map('Outline.TButton',
+            background=[('active', COLORS['hover'])],
+        )
+
+        # Frame style
+        style.configure('Card.TFrame',
+            background=COLORS['surface'],
+            relief='solid',
+            borderwidth=1,
+        )
+
+        # Label style
+        style.configure('Title.TLabel',
+            font=FONTS['title'],
+            foreground=COLORS['primary'],
+            background=COLORS['surface'],
+        )
+        style.configure('Heading.TLabel',
+            font=FONTS['heading'],
+            foreground=COLORS['text'],
+            background=COLORS['surface'],
+        )
+        style.configure('Body.TLabel',
+            font=FONTS['body'],
+            foreground=COLORS['text_secondary'],
+            background=COLORS['surface'],
+        )
+
+        # Radiobutton style
+        style.configure('Modern.TRadiobutton',
+            font=FONTS['body'],
+            foreground=COLORS['text'],
+            background=COLORS['surface'],
+            padding=5,
+        )
+
+        # Treeview style
+        style.configure('Treeview',
+            font=FONTS['body'],
+            rowheight=28,
+        )
+        style.configure('Treeview.Heading',
+            font=FONTS['heading'],
+            background=COLORS['primary'],
+            foreground='white',
+        )
+
     def _create_menu(self):
         """Create the menu bar."""
-        menubar = tk.Menu(self.root)
+        menubar = tk.Menu(self.root, bg=COLORS['surface'], fg=COLORS['text'])
         self.root.config(menu=menubar)
 
-        # File menu
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=i18n.t("menu_file"), menu=file_menu)
+        file_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
+        menubar.add_cascade(label=i18n.t("menu_file"), menu=file_menu, font=FONTS['body'])
         file_menu.add_command(label=i18n.t("menu_exit"), command=self.root.quit)
 
-        # Language menu
-        lang_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=i18n.t("menu_language"), menu=lang_menu)
+        lang_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
+        menubar.add_cascade(label=i18n.t("menu_language"), menu=lang_menu, font=FONTS['body'])
 
         self.lang_var = tk.StringVar(value=i18n.get_language())
         for lang_code, lang_name in LANGUAGES.items():
@@ -66,9 +183,8 @@ class LyricsMatcherGUI:
                 command=self._change_language,
             )
 
-        # Help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label=i18n.t("menu_help"), menu=help_menu)
+        help_menu = tk.Menu(menubar, tearoff=0, bg=COLORS['surface'], fg=COLORS['text'])
+        menubar.add_cascade(label=i18n.t("menu_help"), menu=help_menu, font=FONTS['body'])
         help_menu.add_command(label=i18n.t("menu_about"), command=self._show_about)
 
     def _change_language(self):
@@ -76,31 +192,29 @@ class LyricsMatcherGUI:
         new_lang = self.lang_var.get()
         set_language(new_lang)
         i18n.set_language(new_lang)
-
         self.root.title(i18n.t("app_title"))
-        self.root.config(menu="")
         self._create_menu()
         self._update_ui_texts()
 
     def _update_ui_texts(self):
         """Update all UI texts to current language."""
-        self.btn_select_files.config(text=i18n.t("btn_select_files"))
-        self.btn_select_folder.config(text=i18n.t("btn_select_folder"))
-        self.btn_search.config(text=i18n.t("btn_search"))
-        self.btn_clear.config(text=i18n.t("btn_clear"))
-        self.btn_select_all.config(text=i18n.t("btn_select_all"))
-        self.btn_deselect_all.config(text=i18n.t("btn_deselect_all"))
-        self.btn_invert.config(text=i18n.t("btn_invert_selection"))
-        self.btn_save_selected.config(text=i18n.t("btn_save_selected"))
+        self.btn_select_files.configure(text=i18n.t("btn_select_files"))
+        self.btn_select_folder.configure(text=i18n.t("btn_select_folder"))
+        self.btn_search.configure(text=i18n.t("btn_search"))
+        self.btn_clear.configure(text=i18n.t("btn_clear"))
+        self.btn_select_all.configure(text=i18n.t("btn_select_all"))
+        self.btn_deselect_all.configure(text=i18n.t("btn_deselect_all"))
+        self.btn_invert.configure(text=i18n.t("btn_invert_selection"))
+        self.btn_save_selected.configure(text=i18n.t("btn_save_selected"))
 
-        self.label_files.config(text=i18n.t("label_files"))
-        self.label_results.config(text=i18n.t("label_results"))
-        self.label_preview.config(text=i18n.t("label_preview"))
+        self.label_files.configure(text=i18n.t("label_files"))
+        self.label_results.configure(text=i18n.t("label_results"))
+        self.label_preview.configure(text=i18n.t("label_preview"))
 
-        self.radio_lrc.config(text=i18n.t("format_lrc"))
-        self.radio_enhanced.config(text=i18n.t("format_enhanced"))
-        self.radio_srt.config(text=i18n.t("format_srt"))
-        self.radio_ass.config(text=i18n.t("format_ass"))
+        self.radio_lrc.configure(text=i18n.t("format_lrc"))
+        self.radio_enhanced.configure(text=i18n.t("format_enhanced"))
+        self.radio_srt.configure(text=i18n.t("format_srt"))
+        self.radio_ass.configure(text=i18n.t("format_ass"))
 
         if "Ready" in self.status_var.get() or not self.status_var.get():
             self.status_var.set(i18n.t("ready_status"))
@@ -113,184 +227,286 @@ class LyricsMatcherGUI:
         )
 
     def _create_widgets(self):
-        """Create GUI widgets."""
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky="nsew")
+        """Create GUI widgets with modern design."""
+        # Main container
+        main_container = tk.Frame(self.root, bg=COLORS['bg'])
+        main_container.pack(fill='both', expand=True, padx=20, pady=15)
 
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.rowconfigure(3, weight=1)
+        # Header
+        header_frame = tk.Frame(main_container, bg=COLORS['primary'])
+        header_frame.pack(fill='x', pady=(0, 15))
+
+        tk.Label(
+            header_frame,
+            text="🎵 " + i18n.t("app_title"),
+            font=('Segoe UI', 18, 'bold'),
+            fg='white',
+            bg=COLORS['primary'],
+            padx=15,
+            pady=12,
+        ).pack(side='left')
+
+        # Status bar in header
+        self.status_var = tk.StringVar(value=i18n.t("ready_status"))
+        tk.Label(
+            header_frame,
+            textvariable=self.status_var,
+            font=FONTS['small'],
+            fg='white',
+            bg=COLORS['primary_dark'],
+            padx=15,
+            pady=12,
+        ).pack(side='right')
+
+        # Action buttons frame
+        action_frame = tk.Frame(main_container, bg=COLORS['surface'])
+        action_frame.pack(fill='x', pady=(0, 15))
+        action_frame.configure(relief='solid', borderwidth=1)
 
         # Row 1: Main actions
-        row1_frame = ttk.Frame(main_frame)
-        row1_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
+        row1_frame = tk.Frame(action_frame, bg=COLORS['surface'])
+        row1_frame.pack(fill='x', padx=15, pady=12)
 
         self.btn_select_files = ttk.Button(
             row1_frame,
             text=i18n.t("btn_select_files"),
             command=self._select_files,
-            width=12,
+            style='Modern.TButton',
         )
-        self.btn_select_files.grid(row=0, column=0, padx=(0, 5))
+        self.btn_select_files.pack(side='left', padx=(0, 10))
 
         self.btn_select_folder = ttk.Button(
             row1_frame,
             text=i18n.t("btn_select_folder"),
             command=self._select_folder,
-            width=12,
+            style='Outline.TButton',
         )
-        self.btn_select_folder.grid(row=0, column=1, padx=(0, 5))
+        self.btn_select_folder.pack(side='left', padx=(0, 10))
 
         self.btn_search = ttk.Button(
             row1_frame,
             text=i18n.t("btn_search"),
             command=self._search_lyrics,
-            width=12,
+            style='Secondary.TButton',
         )
-        self.btn_search.grid(row=0, column=2, padx=(0, 5))
-
-        self.btn_clear = ttk.Button(
-            row1_frame,
-            text=i18n.t("btn_clear"),
-            command=self._clear_all,
-            width=8,
-        )
-        self.btn_clear.grid(row=0, column=3, padx=(0, 5))
+        self.btn_search.pack(side='left', padx=(0, 10))
 
         self.btn_save_selected = ttk.Button(
             row1_frame,
             text=i18n.t("btn_save_selected"),
             command=self._save_selected_to_file,
-            width=12,
+            style='Modern.TButton',
         )
-        self.btn_save_selected.grid(row=0, column=4, padx=(0, 5))
+        self.btn_save_selected.pack(side='left', padx=(0, 10))
+
+        self.btn_clear = ttk.Button(
+            row1_frame,
+            text=i18n.t("btn_clear"),
+            command=self._clear_all,
+            style='Outline.TButton',
+        )
+        self.btn_clear.pack(side='left')
 
         # Row 2: Selection and format
-        row2_frame = ttk.Frame(main_frame)
-        row2_frame.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        row2_frame = tk.Frame(action_frame, bg=COLORS['surface'])
+        row2_frame.pack(fill='x', padx=15, pady=(0, 12))
 
         # Selection buttons
-        selection_frame = ttk.LabelFrame(row2_frame, text=i18n.t("label_selection"), padding="5")
-        selection_frame.grid(row=0, column=0, padx=(0, 10))
+        selection_frame = tk.LabelFrame(
+            row2_frame,
+            text=i18n.t("label_selection"),
+            font=FONTS['small'],
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            padx=10,
+            pady=5,
+        )
+        selection_frame.pack(side='left', padx=(0, 20))
 
         self.btn_select_all = ttk.Button(
             selection_frame,
             text=i18n.t("btn_select_all"),
             command=self._select_all_results,
-            width=8,
+            style='Outline.TButton',
         )
-        self.btn_select_all.grid(row=0, column=0, padx=(0, 3))
+        self.btn_select_all.pack(side='left', padx=(0, 5))
 
         self.btn_deselect_all = ttk.Button(
             selection_frame,
             text=i18n.t("btn_deselect_all"),
             command=self._deselect_all_results,
-            width=8,
+            style='Outline.TButton',
         )
-        self.btn_deselect_all.grid(row=0, column=1, padx=(0, 3))
+        self.btn_deselect_all.pack(side='left', padx=(0, 5))
 
         self.btn_invert = ttk.Button(
             selection_frame,
             text=i18n.t("btn_invert_selection"),
             command=self._invert_selection,
-            width=6,
+            style='Outline.TButton',
         )
-        self.btn_invert.grid(row=0, column=2)
+        self.btn_invert.pack(side='left')
 
         # Format selection
-        format_frame = ttk.LabelFrame(row2_frame, text=i18n.t("label_format"), padding="5")
-        format_frame.grid(row=0, column=1)
+        format_frame = tk.LabelFrame(
+            row2_frame,
+            text=i18n.t("label_format"),
+            font=FONTS['small'],
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            padx=10,
+            pady=5,
+        )
+        format_frame.pack(side='left')
 
         self.radio_lrc = ttk.Radiobutton(
             format_frame,
             text=i18n.t("format_lrc"),
             variable=self.current_format,
             value="lrc",
+            style='Modern.TRadiobutton',
         )
-        self.radio_lrc.grid(row=0, column=0, padx=(0, 5))
+        self.radio_lrc.pack(side='left', padx=(0, 10))
 
         self.radio_enhanced = ttk.Radiobutton(
             format_frame,
             text=i18n.t("format_enhanced"),
             variable=self.current_format,
             value="enhanced",
+            style='Modern.TRadiobutton',
         )
-        self.radio_enhanced.grid(row=0, column=1, padx=(0, 5))
+        self.radio_enhanced.pack(side='left', padx=(0, 10))
 
         self.radio_srt = ttk.Radiobutton(
             format_frame,
             text=i18n.t("format_srt"),
             variable=self.current_format,
             value="srt",
+            style='Modern.TRadiobutton',
         )
-        self.radio_srt.grid(row=0, column=2, padx=(0, 5))
+        self.radio_srt.pack(side='left', padx=(0, 10))
 
         self.radio_ass = ttk.Radiobutton(
             format_frame,
             text=i18n.t("format_ass"),
             variable=self.current_format,
             value="ass",
+            style='Modern.TRadiobutton',
         )
-        self.radio_ass.grid(row=0, column=3)
+        self.radio_ass.pack(side='left')
 
-        self.status_var = tk.StringVar(value=i18n.t("ready_status"))
-        ttk.Label(main_frame, textvariable=self.status_var).grid(
-            row=2, column=0, sticky="w", pady=(0, 5)
+        # Content area
+        content_frame = tk.Frame(main_container, bg=COLORS['bg'])
+        content_frame.pack(fill='both', expand=True)
+        content_frame.columnconfigure(0, weight=1)
+        content_frame.columnconfigure(1, weight=2)
+
+        # Left panel - Files and Results
+        left_panel = tk.Frame(content_frame, bg=COLORS['bg'])
+        left_panel.grid(row=0, column=0, sticky='nsew', padx=(0, 10))
+
+        # Selected files
+        self.label_files = tk.Label(
+            left_panel,
+            text=i18n.t("label_files"),
+            font=FONTS['heading'],
+            fg=COLORS['text'],
+            bg=COLORS['bg'],
         )
+        self.label_files.pack(anchor='w', pady=(0, 5))
 
-        # Selected files list
-        list_frame = ttk.Frame(main_frame)
-        list_frame.grid(row=3, column=0, sticky="nsew")
-        list_frame.columnconfigure(0, weight=1)
-        list_frame.rowconfigure(1, weight=1)
+        files_frame = tk.Frame(left_panel, bg=COLORS['surface'])
+        files_frame.pack(fill='both', expand=True)
+        files_frame.configure(relief='solid', borderwidth=1)
 
-        self.label_files = ttk.Label(list_frame, text=i18n.t("label_files"))
-        self.label_files.grid(row=0, column=0, sticky="w", pady=(0, 5))
+        self.file_listbox = tk.Listbox(
+            files_frame,
+            font=FONTS['body'],
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            selectbackground=COLORS['primary'],
+            selectforeground='white',
+            borderwidth=0,
+            highlightthickness=0,
+        )
+        self.file_listbox.pack(fill='both', expand=True, padx=5, pady=5)
 
-        self.file_listbox = tk.Listbox(list_frame, height=4)
-        self.file_listbox.grid(row=1, column=0, sticky="ew", pady=(0, 10))
-
-        scrollbar = ttk.Scrollbar(list_frame, orient="vertical")
-        scrollbar.config(command=self.file_listbox.yview)
-        scrollbar.grid(row=1, column=1, sticky="ns")
-        self.file_listbox.config(yscrollcommand=scrollbar.set)
+        scrollbar_files = ttk.Scrollbar(files_frame, orient='vertical')
+        scrollbar_files.config(command=self.file_listbox.yview)
+        scrollbar_files.pack(side='right', fill='y')
+        self.file_listbox.config(yscrollcommand=scrollbar_files.set)
 
         # Search results
-        self.label_results = ttk.LabelFrame(main_frame, text=i18n.t("label_results"), padding="5")
-        self.label_results.grid(row=4, column=0, sticky="nsew", pady=(10, 0))
-        self.label_results.columnconfigure(0, weight=1)
-        self.label_results.rowconfigure(0, weight=1)
+        self.label_results = tk.Label(
+            left_panel,
+            text=i18n.t("label_results"),
+            font=FONTS['heading'],
+            fg=COLORS['text'],
+            bg=COLORS['bg'],
+        )
+        self.label_results.pack(anchor='w', pady=(15, 5))
+
+        results_frame = tk.Frame(left_panel, bg=COLORS['surface'])
+        results_frame.pack(fill='both', expand=True)
+        results_frame.configure(relief='solid', borderwidth=1)
 
         self.results_listbox = tk.Listbox(
-            self.label_results,
-            height=6,
+            results_frame,
+            font=FONTS['body'],
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            selectbackground=COLORS['secondary'],
+            selectforeground='white',
+            borderwidth=0,
+            highlightthickness=0,
             selectmode=tk.EXTENDED,
         )
-        self.results_listbox.grid(row=0, column=0, sticky="ew")
-        self.results_listbox.bind("<<ListboxSelect>>", self._on_result_select)
-        self.results_listbox.bind("<Control-a>", lambda e: self._select_all_results())
+        self.results_listbox.pack(fill='both', expand=True, padx=5, pady=5)
+        self.results_listbox.bind('<<ListboxSelect>>', self._on_result_select)
+        self.results_listbox.bind('<Control-a>', lambda e: self._select_all_results())
 
-        scrollbar2 = ttk.Scrollbar(self.label_results, orient="vertical")
-        scrollbar2.config(command=self.results_listbox.yview)
-        scrollbar2.grid(row=0, column=1, sticky="ns")
-        self.results_listbox.config(yscrollcommand=scrollbar2.set)
+        scrollbar_results = ttk.Scrollbar(results_frame, orient='vertical')
+        scrollbar_results.config(command=self.results_listbox.yview)
+        scrollbar_results.pack(side='right', fill='y')
+        self.results_listbox.config(yscrollcommand=scrollbar_results.set)
 
-        # Lyrics preview
-        self.label_preview = ttk.LabelFrame(main_frame, text=i18n.t("label_preview"), padding="5")
-        self.label_preview.grid(row=5, column=0, sticky="nsew", pady=(10, 0))
-        self.label_preview.columnconfigure(0, weight=1)
-        self.label_preview.rowconfigure(0, weight=1)
+        # Right panel - Lyrics Preview
+        right_panel = tk.Frame(content_frame, bg=COLORS['bg'])
+        right_panel.grid(row=0, column=1, sticky='nsew')
 
-        self.lyrics_text = tk.Text(self.label_preview, height=10, wrap="word")
-        self.lyrics_text.grid(row=0, column=0, sticky="nsew")
+        self.label_preview = tk.Label(
+            right_panel,
+            text=i18n.t("label_preview"),
+            font=FONTS['heading'],
+            fg=COLORS['text'],
+            bg=COLORS['bg'],
+        )
+        self.label_preview.pack(anchor='w', pady=(0, 5))
 
-        scrollbar3 = ttk.Scrollbar(self.label_preview, orient="vertical")
-        scrollbar3.config(command=self.lyrics_text.yview)
-        scrollbar3.grid(row=0, column=1, sticky="ns")
-        self.lyrics_text.config(yscrollcommand=scrollbar3.set)
+        preview_frame = tk.Frame(right_panel, bg=COLORS['surface'])
+        preview_frame.pack(fill='both', expand=True)
+        preview_frame.configure(relief='solid', borderwidth=1)
 
-        self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
+        self.lyrics_text = tk.Text(
+            preview_frame,
+            font=('Consolas', 10),
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            insertbackground=COLORS['primary'],
+            borderwidth=0,
+            highlightthickness=0,
+            wrap='word',
+            padx=10,
+            pady=10,
+        )
+        self.lyrics_text.pack(fill='both', expand=True)
+
+        scrollbar_preview = ttk.Scrollbar(preview_frame, orient='vertical')
+        scrollbar_preview.config(command=self.lyrics_text.yview)
+        scrollbar_preview.pack(side='right', fill='y')
+        self.lyrics_text.config(yscrollcommand=scrollbar_preview.set)
+
+        self.root.protocol("WM_DELETE_WINDOW", self.root.quit)
 
     def _select_files(self):
         """Open file dialog to select audio files."""
@@ -311,8 +527,7 @@ class LyricsMatcherGUI:
         if folder:
             folder_path = Path(folder)
             self.selected_files = [
-                f
-                for f in folder_path.rglob("*")
+                f for f in folder_path.rglob("*")
                 if f.is_file() and is_supported_audio(f)
             ]
             self._update_file_list()
@@ -323,8 +538,10 @@ class LyricsMatcherGUI:
         for file_path in self.selected_files:
             metadata = get_metadata(file_path)
             title = metadata.title or file_path.stem
-            self.file_listbox.insert(tk.END, f"{title} ({file_path.name})")
-        self.status_var.set(i18n.t("status_loaded", count=len(self.selected_files)))
+            self.file_listbox.insert(tk.END, f"🎵 {title}")
+
+        count = len(self.selected_files)
+        self.status_var.set(i18n.t("status_loaded", count=count))
 
     def _search_lyrics(self):
         """Search for lyrics for selected files using multi-threading."""
@@ -365,15 +582,16 @@ class LyricsMatcherGUI:
                     self.root.update()
 
         self._update_results()
-        self.status_var.set(i18n.t("status_found", count=len(self.search_results)))
+        count = len(self.search_results)
+        self.status_var.set(i18n.t("status_found", count=count))
 
     def _update_results(self):
         """Update the results list display."""
         self.results_listbox.delete(0, tk.END)
 
         for idx, (file_path, track) in enumerate(self.search_results):
-            source_icon = {"LRCLIB": "L", "Netease": "N", "QQ Music": "Q"}.get(track.source, "?")
-            line = f"[{source_icon}] {track.artist_name} - {track.track_name}"
+            source_icon = {"LRCLIB": "🎶", "Netease": "🎧", "QQ Music": "🎤"}.get(track.source, "♪")
+            line = f"{source_icon} {track.artist_name} - {track.track_name}"
             self.results_listbox.insert(tk.END, line)
 
             if idx in self.selected_indices:
@@ -415,7 +633,7 @@ class LyricsMatcherGUI:
             self.results_listbox.selection_set(idx)
 
     def _get_formatted_lyrics(self, track: LyricTrack, file_path: Path) -> str:
-        """Get lyrics in the selected format for a specific track."""
+        """Get lyrics in the selected format."""
         base_lyrics = track.synced_lyrics or track.plain_lyrics or ""
         output_format = self.current_format.get()
         metadata = get_metadata(file_path)
@@ -445,7 +663,7 @@ class LyricsMatcherGUI:
                 file_path, track = self.search_results[idx]
                 lyrics = self._get_formatted_lyrics(track, file_path)
                 if lyrics:
-                    lyrics_path = save_lyrics_to_file(file_path, lyrics, lyrics_format)
+                    save_lyrics_to_file(file_path, lyrics, lyrics_format)
                     saved_count += 1
 
         self.status_var.set(i18n.t("status_saved", count=saved_count))

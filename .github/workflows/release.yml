@@ -28,7 +28,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile --name "LyricsMatcher" --distpath "dist" --add-data "src;src" --hidden-import tkinter --hidden-import tkinter.ttk --hidden-import tkinter.filedialog --hidden-import tkinter.messagebox --collect-all mutagen run.py
+          pyinstaller --onefile --name "LyricsMatcher" --icon="imgs/logo.ico" --distpath "dist" --add-data "src;src" --hidden-import tkinter --hidden-import tkinter.ttk --hidden-import tkinter.filedialog --hidden-import tkinter.messagebox --collect-all mutagen run.py
         shell: cmd
 
       - name: Upload Release Asset

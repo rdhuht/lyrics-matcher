@@ -134,7 +134,7 @@ class LyricsMatcherGUI:
 
         # Label style
         style.configure('Title.TLabel',
-            font=FONTS['title'],
+            font=self.fonts['title'],
             foreground=COLORS['primary'],
             background=COLORS['surface'],
         )
